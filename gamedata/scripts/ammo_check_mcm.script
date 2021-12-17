@@ -1,0 +1,202 @@
+-- settings--
+use_clr = false
+hide_counter = true
+hide_ammo_icon = true
+
+-- locals --
+local clr00_Red = GetARGB(0xff, 0xff, 0x00, 0x00)
+local clr01_RedOrange = GetARGB(0xff, 0xff, 0x40, 0x00)
+local clr02_Orange = GetARGB(0xff, 0xff, 0x80, 0x00)
+local clr03_Amber = GetARGB(0xff, 0xff, 0xc0, 0x00)
+local clr04_LemonGlacier = GetARGB(0xff, 0xff, 0xff, 0x00)
+local clr05_LaserLemon = GetARGB(0xff, 0xff, 0xff, 0x80)
+local clr06_White = GetARGB(0xff, 0xff, 0xff, 0xff)
+
+-- the misalignment of the colors and the text means 2x the info without 2x the text.
+local messages = {
+    {m = "st_ac_near_empty", c = clr00_Red}, -- <1/10
+    {m = "st_ac_near_empty", c = clr01_RedOrange}, -- <2/10
+    {m = "st_ac_less_half", c = clr01_RedOrange}, -- <3/10
+    {m = "st_ac_less_half", c = clr02_Orange}, -- <4/10
+    {m = "st_ac_about_half", c = clr02_Orange}, -- <5/10
+    {m = "st_ac_about_half", c = clr03_Amber}, -- <6/10
+    {m = "st_ac_more_half", c = clr03_Amber}, -- <7/10
+    {m = "st_ac_more_half", c = clr04_LemonGlacier}, -- <8/10
+    {m = "st_ac_nearly_full", c = clr04_LemonGlacier}, -- <9/10
+    {m = "st_ac_nearly_full", c = clr05_LaserLemon}, -- <10/10
+    {m = "st_ac_full", c = clr06_White} -- full
+}
+
+function ac_print_dbg(msg, ...)
+    printf("![AC] " .. msg, ...)
+end
+
+function null_function()
+    return false
+end
+
+function l_round(value)
+    local min = math.floor(value + 0.5)
+    return min
+end
+
+function on_game_start()
+    -- aliases--
+    gc = game.translate_string
+
+    if magazine_binder then
+        print_dbg = magazine_binder.print_dbg
+        get_data = magazine_binder.get_data
+        set_data = magazine_binder.set_data
+        is_supported_weapon = magazine_binder.is_supported_weapon
+        is_jammed_weapon = magazines.is_jammed_weapon
+        print_dbg("MagsRedux installed. Working in integrated mode.")
+    else
+        print_dbg = ac_print_dbg -- Use own print function.
+        get_data = null_function -- Should not be called, just in case.
+        set_data = null_function -- Should not be called, just in case.
+        is_supported_weapon = null_function -- Always returns false, meaning none of the weapons are supported, fall back on vanilla ammo handling.
+        is_jammed_weapon = null_function -- Sadly, standalone mode does not report weapon jams for now.
+        print_dbg("MagsRedux not found. Working in standalone mode.")
+    end
+
+    RegisterScriptCallback("on_key_press", on_key_press)
+    RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
+    RegisterScriptCallback("on_option_change", on_option_change)
+end
+
+-- Script Callbacks --
+
+function on_mcm_load()
+    -- LuaFormatter off
+    ch_options = {
+        id = "rax_ammo_check",
+        sh = true,
+        gr = {
+            {id = "ammo_check", type = "slide", link = "ui_options_slider_player", text = "ui_mm_title_rax_ammo_check", size = {512, 50}, spacing = 20},
+            {id = "usecolor", type = "check", val = 1, def = false},
+            {id = "hidecounter", type = "check", val = 1, def = true},
+            {id = "hideicon", type = "check", val = 1, def = true}
+        }
+    }
+    -- LuaFormatter on
+    return ch_options
+end
+
+function actor_on_first_update()
+    on_option_change()
+end
+
+function on_option_change()
+    if ui_mcm then
+        hide_counter = ui_mcm.get("rax_ammo_check/hidecounter")
+        use_clr = ui_mcm.get("rax_ammo_check/usecolor")
+        hide_ammo_icon = ui_mcm.get("rax_ammo_check/hideicon")
+    end
+
+    pos = ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_cur_ammo:GetWndPos()
+    pos.x = ((hide_counter and pos.x > 0) or ((not hide_counter) and pos.x < 0)) and (-1 * pos.x) or pos.x
+    ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_cur_ammo:SetWndPos(pos)
+
+    pos = ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_icon:GetWndPos()
+    pos.x = ((hide_ammo_icon and pos.x > 0) or ((not hide_ammo_icon) and pos.x < 0)) and (-1 * pos.x) or pos.x
+    ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_icon:SetWndPos(pos)
+end
+
+function on_key_press(key)
+    local bind = dik_to_bind(key)
+    if (bind == key_bindings.kCUSTOM25) then
+        local success, err = pcall(checkAmmo)
+
+        if not success then
+            print_dbg("Error: %s", err)
+        end
+    end
+end
+
+-- Main function --
+function checkAmmo()
+    local weapon = db.actor:active_item()
+
+    -- ends if no weapon is in hand etc.
+    if (weapon == nil or (not IsWeapon(weapon)) or IsItem("fake_ammo_wpn", nil, weapon)) then
+        return
+    end
+
+    local weaponId = weapon:id()
+
+    local message = ""
+    local clr = nil
+
+    local currentState = weapon:get_state()
+    if currentState ~= 0 then
+        return
+    end
+
+    -- if magazine weapon
+    local currentAmmo = weapon:get_ammo_in_magazine()
+    if (currentAmmo == nil) then
+        return
+    end
+
+    local sec = weapon:section()
+    local top_round = nil
+
+    if (is_jammed_weapon(weapon)) then
+        message = gc("st_ac_jammed")
+        clr = use_clr and clr00_Red or nil
+    elseif currentAmmo == 0 then
+        if is_supported_weapon(sec) and get_data(weaponId) == nil then
+            message = gc("st_ac_noMag")
+            clr = use_clr and clr00_Red or nil
+        else
+            message = gc("st_ac_empty")
+            clr = use_clr and clr00_Red or nil
+        end
+    else
+        local max_ammo = 0
+
+        if is_supported_weapon(sec) then
+            local mag_data = get_data(weaponId)
+            if not mag_data then return end
+            print_dbg("checking for section %s", mag_data.section)
+            max_ammo = SYS_GetParam(2, mag_data.section, "max_mag_size")
+            top_round = stack.peek(mag_data.loaded)
+        else
+            local ammo_type = weapon:get_ammo_type()
+            local ammo_table = utils_item.get_ammo(nil, weaponId)
+            top_round = ammo_table[ammo_type + 1]
+            print_dbg("Top round is %s, index %s, ammo table has %s entries", top_round, ammo_type, #ammo_table)
+            max_ammo = SYS_GetParam(2, sec, "ammo_mag_size")
+        end
+        local curAmmoPerc = currentAmmo / max_ammo
+
+        if currentAmmo == max_ammo + 1 then
+            message = gc("st_ac_plus1")
+            clr = use_clr and clr03_Amber
+        elseif (curAmmoPerc > 1) then
+            message = gc("st_ac_overfull")
+            clr = utils_xml.get_color("d_purple", true) -- always colored this is an error.
+        elseif (currentAmmo == 1 and SYS_GetParam(2, sec, "ammo_mag_size", 0) == 2) then
+            message = gc("st_ac_just_one")
+            clr = use_clr and clr03_Amber
+        else
+            idx = l_round((curAmmoPerc * 10) + .5) -- gives an interger value n for the decile of curAmmoPerc and 11 for full.
+            print_dbg("IDX is %s %s %s %s", idx, curAmmoPerc, currentAmmo, max_ammo)
+            message = messages[idx] and gc(messages[idx].m) or "Error!"
+            clr = use_clr and messages[idx] and messages[idx].c or nil
+        end
+
+        if curAmmoPerc > 0 and top_round then
+            message = message .. ", " .. gc(SYS_GetParam(0, top_round, "inv_name_short") or SYS_GetParam(0, top_round, "inv_name"))
+        end
+    end
+
+    db.actor:hide_weapon()
+    disable_info("sleep_active")
+    CreateTimeEvent("ammo_check", "restore Weapon", 1.5, function()
+        actor_menu.set_msg(1, message, 2, clr)
+        db.actor:restore_weapon()
+        return true
+    end)
+end
