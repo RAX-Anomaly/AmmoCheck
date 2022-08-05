@@ -18,6 +18,14 @@
 			"*.ltx": "ini",
 			"*.script": "lua"
 		},
-		"lpubsppop01.autoTimeStamp.momentFormat": "YYYY.MM.DD"
+		"lpubsppop01.autoTimeStamp.momentFormat": "YYYY.MM.DD",
+		"runOnSave.commands": [
+			{
+				"match": "gamedata",
+				"command": "if exist C:\\Games\\MO2-Anomaly xcopy ${workspaceFolder}\\gamedata C:\\Games\\MO2-Anomaly\\mods\\INSERT_MOD_NAME_HERE\\gamedata /DICEY",
+				"runIn": "backend",
+				"finishStatusMessage": "Gamedata content copied."
+			}
+		]
 	}
 }

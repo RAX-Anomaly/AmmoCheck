@@ -111,6 +111,7 @@ function on_game_start()
         get_mag_loaded = magazine_binder.get_mag_loaded
         is_supported_weapon = magazine_binder.is_supported_weapon
         is_jammed_weapon = magazines.is_jammed_weapon
+        get_sec_chambered = magazines.get_sec_chambered
         print_dbg("MagsRedux installed. Working in integrated mode.")
     else
         get_data = null_function -- Should not be called, just in case.
@@ -118,6 +119,7 @@ function on_game_start()
         is_supported_weapon = null_function -- Always returns false, meaning none of the weapons are supported, fall back on vanilla ammo handling.
         get_mag_loaded = null_function
         is_jammed_weapon = null_function -- Sadly, standalone mode does not report weapon jams for now.
+        get_sec_chambered = null_function -- No "one-in-the-chamber" feature in vanilla.
         print_dbg("MagsRedux not found. Working in standalone mode.")
     end
 
@@ -164,7 +166,6 @@ function on_option_change()
             modifier = ui_mcm.get("rax_ammo_check/modifier")
             RegisterScriptCallback(modes[mode]["call"][1], this[modes[mode]["call"][1]])
             UnregisterScriptCallback(modes[mode]["call"][2], this[modes[mode]["call"][2]])
-
         end
     end
 
@@ -236,7 +237,7 @@ function check_Ammo()
             max_ammo = SYS_GetParam(2, mag_data.section, "max_mag_size")
             top_round = magazines_mcm.get_config("retain_round") and mag_data.loaded[#mag_data.loaded - 1] or stack.peek(mag_data.loaded)
         else
-            top_round = magazines.get_sec_chambered(weapon)
+            top_round = get_sec_chambered(weapon)
             max_ammo = SYS_GetParam(2, sec, "ammo_mag_size")
         end
 
