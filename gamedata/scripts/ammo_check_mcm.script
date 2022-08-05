@@ -1,3 +1,7 @@
+-- AmmoCheck
+-- Last modified: 2022.08.05
+-- https://github.com/RAX-Anomaly/AmmoCheck
+
 -- settings--
 local use_clr = false
 local hide_counter = true
@@ -16,32 +20,32 @@ local clr06_White = GetARGB(0xff, 0xff, 0xff, 0xff)
 
 -- the misalignment of the colors and the text means 2x the info without 2x the text.
 local messages = {
-    {m = "st_ac_near_empty", c = clr00_Red}, -- <1/10
-    {m = "st_ac_near_empty", c = clr01_RedOrange}, -- <2/10
-    {m = "st_ac_less_half", c = clr01_RedOrange}, -- <3/10
-    {m = "st_ac_less_half", c = clr02_Orange}, -- <4/10
-    {m = "st_ac_about_half", c = clr02_Orange}, -- <5/10
-    {m = "st_ac_about_half", c = clr03_Amber}, -- <6/10
-    {m = "st_ac_more_half", c = clr03_Amber}, -- <7/10
-    {m = "st_ac_more_half", c = clr04_LemonGlacier}, -- <8/10
-    {m = "st_ac_nearly_full", c = clr04_LemonGlacier}, -- <9/10
-    {m = "st_ac_nearly_full", c = clr05_LaserLemon}, -- <10/10
-    {m = "st_ac_full", c = clr06_White} -- full
+    { m = "st_ac_near_empty", c = clr00_Red }, -- <1/10
+    { m = "st_ac_near_empty", c = clr01_RedOrange }, -- <2/10
+    { m = "st_ac_less_half", c = clr01_RedOrange }, -- <3/10
+    { m = "st_ac_less_half", c = clr02_Orange }, -- <4/10
+    { m = "st_ac_about_half", c = clr02_Orange }, -- <5/10
+    { m = "st_ac_about_half", c = clr03_Amber }, -- <6/10
+    { m = "st_ac_more_half", c = clr03_Amber }, -- <7/10
+    { m = "st_ac_more_half", c = clr04_LemonGlacier }, -- <8/10
+    { m = "st_ac_nearly_full", c = clr04_LemonGlacier }, -- <9/10
+    { m = "st_ac_nearly_full", c = clr05_LaserLemon }, -- <10/10
+    { m = "st_ac_full", c = clr06_White } -- full
 }
 
 local dbg_log
 function print_dbg(msg, ...)
-	if not mcm_log then
-		printf("![AC] " .. msg, ...)
-	elseif not ui_mcm.MCM_DEBUG then -- use MCM's debug log setting 
-		return
-	else
-		if not dbg_log then
-			dbg_log = mcm_log.new("![AC]")
-			dbg_log.enabled = true
-		end
-		if dbg_log then dbg_log:log(msg, ...) end
-	end
+    if not mcm_log then
+        printf("![AC] " .. msg, ...)
+    elseif not ui_mcm.MCM_DEBUG then -- use MCM's debug log setting
+        return
+    else
+        if not dbg_log then
+            dbg_log = mcm_log.new("![AC]")
+            dbg_log.enabled = true
+        end
+        if dbg_log then dbg_log:log(msg, ...) end
+    end
 end
 
 function null_function()
@@ -53,43 +57,44 @@ local modifier = 0
 local mode = 0
 
 local modes = {
-    [0] = { ["call"] = {"on_key_press", "on_key_hold"}, ["function"] = function(key) ui_mcm.simple_press("rax_ammo_check", key, check_Ammo) end },
-    [1] = { ["call"] = {"on_key_press", "on_key_hold"}, ["function"] = function(key) if ui_mcm.double_tap("rax_ammo_check", key) then check_Ammo() end end },
-    [2] = { ["call"] = {"on_key_hold", "on_key_press"}, ["function"] = function(key) if ui_mcm.key_hold("rax_ammo_check", key) then check_Ammo() end end }
+    [0] = { ["call"] = { "on_key_press", "on_key_hold" }, ["function"] = function(key) ui_mcm.simple_press("rax_ammo_check", key, check_Ammo) end },
+    [1] = { ["call"] = { "on_key_press", "on_key_hold" }, ["function"] = function(key) if ui_mcm.double_tap("rax_ammo_check", key) then check_Ammo() end end },
+    [2] = { ["call"] = { "on_key_hold", "on_key_press" }, ["function"] = function(key) if ui_mcm.key_hold("rax_ammo_check", key) then check_Ammo() end end }
 }
 
 local direction_keys = {
-	[key_bindings.kFWD] = true,
-	[key_bindings.kBACK] = true,
-	[key_bindings.kL_STRAFE] = true,
-	[key_bindings.kACCEL] = true,
-	[key_bindings.kR_STRAFE] = true
+    [key_bindings.kFWD] = true,
+    [key_bindings.kBACK] = true,
+    [key_bindings.kL_STRAFE] = true,
+    [key_bindings.kACCEL] = true,
+    [key_bindings.kR_STRAFE] = true
 }
-local weapon_hidden = false
-function on_key_press(key)
-	-- do not interrupt if directional key pressed
-	local bind = dik_to_bind(key)
-	if weapon_hidden and not direction_keys[bind] then
-		weapon_hidden = false
-	end
 
-	if key ~= mcm_key then return end
-    if not mcm_keybinds then 
-        check_Ammo() 
-        return 
+local weapon_hidden = false
+
+function on_key_press(key)
+    -- do not interrupt if directional key pressed
+    local bind = dik_to_bind(key)
+    if weapon_hidden and not direction_keys[bind] then
+        weapon_hidden = false
     end
-	if ui_mcm.get_mod_key(modifier) then
-		modes[mode]["function"](key)
-	end
+
+    if key ~= mcm_key then return end
+    if not mcm_keybinds then
+        check_Ammo()
+        return
+    end
+    if ui_mcm.get_mod_key(modifier) then
+        modes[mode]["function"](key)
+    end
 end
 
 function on_key_hold(key)
     if key ~= mcm_key then return end
-	if ui_mcm.get_mod_key(modifier) then
-		modes[mode]["function"](key)
-	end
+    if ui_mcm.get_mod_key(modifier) then
+        modes[mode]["function"](key)
+    end
 end
-
 
 function l_round(value)
     local min = math.floor(value + 0.5)
@@ -118,33 +123,28 @@ function on_game_start()
 
     RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
     RegisterScriptCallback("on_option_change", on_option_change)
-	RegisterScriptCallback("on_option_change", on_option_change)
+    RegisterScriptCallback("on_option_change", on_option_change)
     RegisterScriptCallback("on_key_press", on_key_press)
-
 end
 
 -- Script Callbacks --
 
 function on_mcm_load()
-    -- LuaFormatter off
     ch_options = {
         id = "rax_ammo_check",
         sh = true,
         gr = {
-            {id = "ammo_check", type = "slide", link = "ui_options_slider_player", text = "ui_mm_title_rax_ammo_check", size = {512, 50}, spacing = 20},
-            {id = "usecolor", type = "check", val = 1, def = false},
-            {id = "hidecounter", type = "check", val = 1, def = true},
-            {id = "hideicon", type = "check", val = 1, def = true},
-            {id = "busy_hands_fix", type = "check", val = 1, def = false},
-			{ id = "keybind"             , type = "key_bind"          , val = 2, def = DIK_keys.DIK_F },
-	        {id = "modifier", type = ui_mcm.kb_mod_radio, val = 2, def = 0, hint = "mcm_kb_modifier" , content= { {0,"mcm_kb_mod_none"} , {1,"mcm_kb_mod_shift"} ,{3,"mcm_kb_mod_alt"}}}, --I removed control from the list, note the values of the other options were unchanged.
-            {id = "mode", type = ui_mcm.kb_mod_radio, val = 2, def = 2, hint = "mcm_kb_mode" , content= { {0,"mcm_kb_mode_press"} , {1,"mcm_kb_mode_dtap"} , {2,"mcm_kb_mode_hold"}}},
-
-            { id = "desc_mcm"    	 	        , type = "desc"     , text= "ui_mcm_rax_ammo_check_update_mcm", clr = {255, 175 ,0 ,0}, precondition = {function() return not mcm_keybinds end} },
-
+            { id = "ammo_check", type = "slide", link = "ui_options_slider_player", text = "ui_mm_title_rax_ammo_check", size = { 512, 50 }, spacing = 20 },
+            { id = "usecolor", type = "check", val = 1, def = false },
+            { id = "hidecounter", type = "check", val = 1, def = true },
+            { id = "hideicon", type = "check", val = 1, def = true },
+            { id = "busy_hands_fix", type = "check", val = 1, def = false },
+            { id = "keybind", type = "key_bind", val = 2, def = DIK_keys.DIK_F },
+            { id = "modifier", type = ui_mcm.kb_mod_radio, val = 2, def = 0, hint = "mcm_kb_modifier", content = { { 0, "mcm_kb_mod_none" }, { 1, "mcm_kb_mod_shift" }, { 3, "mcm_kb_mod_alt" } } }, --I removed control from the list, note the values of the other options were unchanged.
+            { id = "mode", type = ui_mcm.kb_mod_radio, val = 2, def = 2, hint = "mcm_kb_mode", content = { { 0, "mcm_kb_mode_press" }, { 1, "mcm_kb_mode_dtap" }, { 2, "mcm_kb_mode_hold" } } },
+            { id = "desc_mcm", type = "desc", text = "ui_mcm_rax_ammo_check_update_mcm", clr = { 255, 175, 0, 0 }, precondition = { function() return not mcm_keybinds end } },
         }
     }
-    -- LuaFormatter on
     return ch_options
 end
 
@@ -158,16 +158,16 @@ function on_option_change()
         use_clr = ui_mcm.get("rax_ammo_check/usecolor")
         hide_ammo_icon = ui_mcm.get("rax_ammo_check/hideicon")
         busy_hands_fix = ui_mcm.get("rax_ammo_check/busy_hands_fix")
-		if mcm_keybinds then
-			mcm_key = ui_mcm.get("rax_ammo_check/keybind")
-			mode = ui_mcm.get("rax_ammo_check/mode")
-			modifier = ui_mcm.get("rax_ammo_check/modifier")
-			RegisterScriptCallback(modes[mode]["call"][1], this[modes[mode]["call"][1]])
-			UnregisterScriptCallback(modes[mode]["call"][2], this[modes[mode]["call"][2]])
+        if mcm_keybinds then
+            mcm_key = ui_mcm.get("rax_ammo_check/keybind")
+            mode = ui_mcm.get("rax_ammo_check/mode")
+            modifier = ui_mcm.get("rax_ammo_check/modifier")
+            RegisterScriptCallback(modes[mode]["call"][1], this[modes[mode]["call"][1]])
+            UnregisterScriptCallback(modes[mode]["call"][2], this[modes[mode]["call"][2]])
 
-		end
+        end
     end
-	
+
     pos = ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_cur_ammo:GetWndPos()
     pos.x = ((hide_counter and pos.x > 0) or ((not hide_counter) and pos.x < 0)) and (-1 * pos.x) or pos.x
     ActorMenu.get_maingame().m_ui_hud_states.m_ui_weapon_cur_ammo:SetWndPos(pos)
@@ -226,6 +226,7 @@ function check_Ammo()
     else
         local top_round = nil
         local max_ammo = 0
+
         if not mag_data and is_supported_weapon(sec) then
             -- some random crap to force it to say oitc
             currentAmmo = 1
@@ -238,6 +239,7 @@ function check_Ammo()
             top_round = magazines.get_sec_chambered(weapon)
             max_ammo = SYS_GetParam(2, sec, "ammo_mag_size")
         end
+
         local curAmmoPerc = currentAmmo / max_ammo
 
         if currentAmmo == max_ammo + 1 then
@@ -263,31 +265,33 @@ function check_Ammo()
             message = message .. ", " .. gc(ui_item.get_sec_short_name(top_round))
         end
     end
-	disable_info("sleep_active")
-	if not busy_hands_fix then
-        local slot = db.actor:active_slot()
-		db.actor:activate_slot(0)
-        weapon_hidden = true
-		CreateTimeEvent("ammo_check", "restore Weapon", 0, function(slot)
-			if db.actor:active_item() then
-				 return false 
-			end
-			if not weapon_hidden then
-				db.actor:activate_slot(slot) 
-				weapon_hidden = false
-				return true
-			end
-			actor_menu.set_msg(1, message, 2, clr)
-			db.actor:activate_slot(slot)
 
-			return true
-		end
-    , slot)
-	else
-		CreateTimeEvent("ammo_check", "message delay", 1.5, function()
-			actor_menu.set_msg(1, message, 2, clr) 
-			return true
-		end)
-	end
- 
+    disable_info("sleep_active")
+
+    if not busy_hands_fix then
+        local slot = db.actor:active_slot()
+        db.actor:activate_slot(0)
+        weapon_hidden = true
+        CreateTimeEvent("ammo_check", "restore Weapon", 0, function(slot)
+            if db.actor:active_item() then
+                return false
+            end
+            if not weapon_hidden then
+                db.actor:activate_slot(slot)
+                weapon_hidden = false
+                return true
+            end
+            actor_menu.set_msg(1, message, 2, clr)
+            db.actor:activate_slot(slot)
+
+            return true
+        end
+            , slot)
+    else
+        CreateTimeEvent("ammo_check", "message delay", 1.5, function()
+            actor_menu.set_msg(1, message, 2, clr)
+            return true
+        end)
+    end
+
 end
