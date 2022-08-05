@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"[xml]": {
+			"files.encoding": "windows1251"
+		},
+		"[lua]": {
+			"files.encoding": "windows1251"
+		},
+		"[ini]": {
+			"files.encoding": "windows1251"
+		},
+		"files.associations": {
+			"*.ltx": "ini",
+			"*.script": "lua"
+		},
+		"lpubsppop01.autoTimeStamp.momentFormat": "YYYY.MM.DD"
+	}
+}
