@@ -1,0 +1,37 @@
+{
+    "Lua.diagnostics.globals": [
+        "actor_menu",
+        "ActorMenu",
+        "CreateTimeEvent",
+        "db",
+        "DIK_keys",
+        "dik_to_bind",
+        "disable_info",
+        "game",
+        "GetARGB",
+        "IsItem",
+        "IsWeapon",
+        "key_bindings",
+        "magazine_binder",
+        "magazines_mcm",
+        "magazines",
+        "mcm_log",
+        "null_function",
+        "print_dbg",
+        "printf",
+        "RegisterScriptCallback",
+        "stack",
+        "SYS_GetParam",
+        "this",
+        "ui_item",
+        "ui_mcm",
+        "UnregisterScriptCallback",
+        "utils_xml"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ],
+    "Lua.format.defaultConfig": {
+        "max_line_length": "200"
+    }
+}
