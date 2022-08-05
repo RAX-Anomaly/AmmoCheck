@@ -1,0 +1,49 @@
+# Automatically generates a Zip package whenever the main branch is updated.
+name: Repack
+
+# Customize the contents of the Zip package here:
+env:
+  RELEASE_NAME: "AmmoCheck"
+  ZIP_CONTENTS: "README.md gamedata"
+
+on:
+  # Produces a "latest" package for push operations on the main branch.
+  push:
+    branches: [ main ]
+  
+  # Produces a "pre-release" package for pull requests on the main branch.
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=today::$(date +'%Y.%m.%d')"
+
+      - name: Zip folder
+        run: |
+          mv README.md readme.txt
+          zip -r $RELEASE_NAME.$RELEASE_DATE.zip $ZIP_CONTENTS
+        env: 
+          RELEASE_DATE: ${{ steps.date.outputs.today }}
+      
+      - name: Publish
+        id: publish
+        uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: ${{ github.event_name != 'push' }}
+          automatic_release_tag: ${{ github.event_name == 'push' && 'latest' || 'pre-release' }}
+          files: |
+            *.zip
