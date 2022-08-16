@@ -1,5 +1,5 @@
 -- AmmoCheck
--- Last modified: 2022.08.05
+-- Last modified: 2022.08.17
 -- https://github.com/RAX-Anomaly/AmmoCheck
 
 -- settings--
@@ -17,6 +17,8 @@ local clr03_Amber = GetARGB(0xff, 0xff, 0xc0, 0x00)
 local clr04_LemonGlacier = GetARGB(0xff, 0xff, 0xff, 0x00)
 local clr05_LaserLemon = GetARGB(0xff, 0xff, 0xff, 0x80)
 local clr06_White = GetARGB(0xff, 0xff, 0xff, 0xff)
+
+local clrEE_Purple = utils_xml.get_color("d_purple", true)
 
 -- the misalignment of the colors and the text means 2x the info without 2x the text.
 local messages = {
@@ -215,7 +217,7 @@ function check_Ammo()
         clr = use_clr and clr00_Red or nil
     elseif weapon:weapon_in_grenade_mode() then
         message = currentAmmo == 1 and gc("st_ac_grenade") or gc("st_ac_empty")
-        clr = use_clr and clr03_Amber
+        clr = use_clr and (currentAmmo == 1 and clr06_White or clr00_Red) -- grenade or no grenade that is the question
     elseif currentAmmo == 0 then
         if is_supported_weapon(sec) and not mag_data then
             message = gc("st_ac_noMag")
@@ -245,16 +247,16 @@ function check_Ammo()
 
         if currentAmmo == max_ammo + 1 then
             message = gc("st_ac_plus1")
-            clr = use_clr and clr03_Amber
+            clr = use_clr and clr06_White -- fullest
         elseif (curAmmoPerc > 1) then
             message = gc("st_ac_overfull")
-            clr = utils_xml.get_color("d_purple", true) -- always colored this is an error.
+            clr = clrEE_Purple -- always colored this is an error.
         elseif (currentAmmo == 1 and SYS_GetParam(2, sec, "ammo_mag_size", 0) == 2) then
             message = gc("st_ac_just_one")
-            clr = use_clr and clr03_Amber
+            clr = use_clr and clr03_Amber -- last shell in double-barreled shotty
         elseif currentAmmo == 1 and not mag_data and is_supported_weapon(sec) then
             message = gc("st_ac_oitc")
-            clr = use_clr and clr03_Amber
+            clr = use_clr and clr00_Red -- last round in the chamber with no maggie
         else
             idx = l_round((curAmmoPerc * 10) + .5) -- gives an integer value n for the decile of curAmmoPerc and 11 for full.
             print_dbg("IDX is %s %s %s %s", idx, curAmmoPerc, currentAmmo, max_ammo)
