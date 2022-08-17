@@ -54,6 +54,13 @@ function null_function()
     return false
 end
 
+function get_mag_loaded_shim(id)
+    give_news("You are using an older version of MagsRedux. Update to Github version for best experience.")
+
+    local mag_data = get_data(id)
+    return (mag_data and mag_data.section ~= "no_mag") and mag_data or nil
+end
+
 local mcm_keybinds = ui_mcm and ui_mcm.key_hold
 local modifier = 0
 local mode = 0
@@ -110,7 +117,7 @@ function on_game_start()
     if magazine_binder then
         get_data = magazine_binder.get_data
         set_data = magazine_binder.set_data
-        get_mag_loaded = magazine_binder.get_mag_loaded
+        get_mag_loaded = magazine_binder.get_mag_loaded or get_mag_loaded_shim -- get_mag_loaded does not exist in moddb version. MagsRedux needs update.
         is_supported_weapon = magazine_binder.is_supported_weapon
         is_jammed_weapon = magazines.is_jammed_weapon
         get_sec_chambered = magazines.get_sec_chambered
@@ -119,7 +126,7 @@ function on_game_start()
         get_data = null_function -- Should not be called, just in case.
         set_data = null_function -- Should not be called, just in case.
         is_supported_weapon = null_function -- Always returns false, meaning none of the weapons are supported, fall back on vanilla ammo handling.
-        get_mag_loaded = null_function
+        get_mag_loaded = null_function -- There is never a loaded magazine in vanilla.
         is_jammed_weapon = null_function -- Sadly, standalone mode does not report weapon jams for now.
         get_sec_chambered = null_function -- No "one-in-the-chamber" feature in vanilla.
         print_dbg("MagsRedux not found. Working in standalone mode.")
@@ -297,4 +304,17 @@ function check_Ammo()
         end)
     end
 
+end
+
+local old_news = {}
+
+function give_news(message)
+    if old_news[message] then return end
+
+    old_news[message] = true
+
+    print_dbg(message)
+    if db.actor then
+        db.actor:give_game_news("AmmoCheck", message, "ui_inGame2_D_Ohotnik_na_mutantov", 0, 5000, 0)
+    end
 end
