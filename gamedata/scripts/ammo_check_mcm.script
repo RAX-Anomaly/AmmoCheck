@@ -290,8 +290,6 @@ function check_Ammo()
     disable_info("sleep_active")
 
     if not busy_hands_fix then
-        if has_ammo_check(weapon) then
-        end
 		local anm_ammo_check = get_hud_val(weapon, "anm_ammo_check") 
 		if anm_ammo_check then
             -- moved to another  func for tidy
