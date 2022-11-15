@@ -20,6 +20,9 @@ local clr06_White = GetARGB(0xff, 0xff, 0xff, 0xff)
 
 local clrEE_Purple = utils_xml.get_color("d_purple", true)
 
+-- nil - no ammo check in progress
+-- 1 - set flag to catch during on hud anim play
+-- 2 - play manually
 local do_ammo_check_anim
 local no_mag_check
 
@@ -287,56 +290,13 @@ function check_Ammo()
     disable_info("sleep_active")
 
     if not busy_hands_fix then
-		local anm_ammo_check = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check") 
+        if has_ammo_check(weapon) then
+        end
+		local anm_ammo_check = get_hud_val(weapon, "anm_ammo_check") 
 		if anm_ammo_check then
-			if do_ammo_check_anim then return end -- If an ammo check is already happening, don't do anything
-			
-			local anm_no_mag_check = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check_no_mag")
-			if no_mag_check and (not anm_no_mag_check) then -- if trying to mag check with no mag in gun and there's no "no_mag_check" animation it immediately shows the ammo message without animation
-				message_delay = 0
-			else
-				message_delay = 1.5
-				
-				if GAME_VERSION ~= "1.5.1" and false then -- if using 1.5.2 or newer: use actor_on_hud_animation_play callback to catch state switch and play the mag check animation
-					do_ammo_check_anim = 1
-					weapon:switch_state(4)
-				else
-					local anm_check_empty = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check_empty")
-
-					if no_mag_check and anm_no_mag_check then
-						weapon:play_hud_motion("anm_ammo_check_no_mag", true, 0, 1, 0)
-						local snd_no_mag_check = SYS_GetParam(0, weapon:section() ,"snd_ammo_check_no_mag")
-						if snd_no_mag_check then
-							utils_obj.play_sound(snd_no_mag_check)
-						end
-					elseif anm_check_empty and weapon:get_ammo_in_magazine() == 0 then
-						weapon:play_hud_motion("anm_ammo_check_empty", true, 0, 1, 0)
-						local snd_ammo_check_empty = SYS_GetParam(0, weapon:section() ,"snd_ammo_check_empty")
-						if snd_ammo_check_empty then
-							utils_obj.play_sound(snd_ammo_check_empty)
-						end
-					else
-						weapon:play_hud_motion("anm_ammo_check", true, 0, 1, 0)
-						local snd_ammo_check = SYS_GetParam(0, weapon:section() ,"snd_ammo_check")
-						if snd_ammo_check then
-							utils_obj.play_sound(snd_ammo_check)
-						end
-					end
-					doing_ammo_check_anim = 2
-				end
-			end
-			
-			CreateTimeEvent("ammo_check", "message delay", message_delay, function()
-				actor_menu.set_msg(1, message, 2, clr)
-				return true
-			end)
-			CreateTimeEvent("ammo_check", "ammo check reset", message_delay + 1.5, function() 
-				do_ammo_check_anim = nil
-				no_mag_check = nil
-				return true
-			end) 
+            -- moved to another  func for tidy
+            anim_ammo_check(weapon, message, no_mag_check)
 		else
-	
 			local slot = db.actor:active_slot()
 			db.actor:activate_slot(0)
 			weapon_hidden = true
@@ -353,9 +313,7 @@ function check_Ammo()
 				db.actor:activate_slot(slot)
 
 				return true
-			end
-				, slot)
-			
+			end, slot)
 		end
     else
         CreateTimeEvent("ammo_check", "message delay", 1.5, function()
@@ -364,6 +322,63 @@ function check_Ammo()
         end)
     end
 
+end
+
+function get_hud_val(wpn, key)
+    local hud = SYS_GetParam(0, wpn:section(), "hud")
+    if hud then
+        return SYS_GetParam(0, hud, key)
+    end
+end
+
+function anim_ammo_check(weapon, message, no_mag_check)
+
+    if do_ammo_check_anim then return end -- If an ammo check is already happening, don't do anything
+			
+    local anm_no_mag_check = get_hud_val(weapon, "anm_ammo_check_no_mag")
+    if no_mag_check and (not anm_no_mag_check) then -- if trying to mag check with no mag in gun and there's no "no_mag_check" animation it immediately shows the ammo message without animation
+        message_delay = 0
+    else
+        message_delay = 1.5
+        
+        if GAME_VERSION ~= "1.5.1" and false then -- if using 1.5.2 or newer: use actor_on_hud_animation_play callback to catch state switch and play the mag check animation
+            do_ammo_check_anim = 1
+            weapon:switch_state(4)
+        else
+            local anm_check_empty = get_hud_val(weapon, "anm_ammo_check_empty")
+
+            if no_mag_check and anm_no_mag_check then
+                weapon:play_hud_motion("anm_ammo_check_no_mag", true, 0, 1, 0)
+                local snd_no_mag_check = SYS_GetParam(0, weapon:section() ,"snd_ammo_check_no_mag")
+                if snd_no_mag_check then
+                    utils_obj.play_sound(snd_no_mag_check)
+                end
+            elseif anm_check_empty and weapon:get_ammo_in_magazine() == 0 then
+                weapon:play_hud_motion("anm_ammo_check_empty", true, 0, 1, 0)
+                local snd_ammo_check_empty = SYS_GetParam(0, weapon:section() ,"snd_ammo_check_empty")
+                if snd_ammo_check_empty then
+                    utils_obj.play_sound(snd_ammo_check_empty)
+                end
+            else
+                weapon:play_hud_motion("anm_ammo_check", true, 0, 1, 0)
+                local snd_ammo_check = SYS_GetParam(0, weapon:section() ,"snd_ammo_check")
+                if snd_ammo_check then
+                    utils_obj.play_sound(snd_ammo_check)
+                end
+            end
+            do_ammo_check_anim = 2
+        end
+    end
+    
+    CreateTimeEvent("ammo_check", "message delay", message_delay, function()
+        actor_menu.set_msg(1, message, 2, clr)
+        return true
+    end)
+    CreateTimeEvent("ammo_check", "ammo check reset", message_delay + 1.5, function() 
+        do_ammo_check_anim = nil
+        no_mag_check = nil
+        return true
+    end)
 end
 
 local old_news = {}
