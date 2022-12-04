@@ -287,7 +287,8 @@ function check_Ammo()
     disable_info("sleep_active")
 
     if not busy_hands_fix then
-		local anm_ammo_check = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check") 
+		local hud_sec = SYS_GetParam(0, weapon:section(), "hud")
+		anm_ammo_check = hud_sec and SYS_GetParam(0, hud_sec, "anm_ammo_check") or nil
 		if anm_ammo_check then
 			if do_ammo_check_anim then return end -- If an ammo check is already happening, don't do anything
 			
