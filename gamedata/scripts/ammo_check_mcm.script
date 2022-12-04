@@ -339,7 +339,7 @@ function anim_ammo_check(weapon, message, no_mag_check)
     else
         message_delay = 1.5
         
-        if GAME_VERSION ~= "1.5.1" and false then -- if using 1.5.2 or newer: use actor_on_hud_animation_play callback to catch state switch and play the mag check animation
+        if GAME_VERSION ~= "1.5.1" then -- if using 1.5.2 or newer: use actor_on_hud_animation_play callback to catch state switch and play the mag check animation
             do_ammo_check_anim = 1
             weapon:switch_state(4)
         else
@@ -407,15 +407,17 @@ local valid_anms = {
 	anm_idle_moving_empty = true,
 	anm_idle_sprint_empty = true,
 	anm_bore = true,
-	anm_bore_empty = true
+	anm_bore_empty = true,
+    anm_idle_g = true,
+    anm_idle_w_gl = true
 }
 
 function actor_on_hud_animation_play(anim_table, obj)
-	if valid_anms[anim_table.anm_name] and do_ammo_check_anim == 1 and obj:get_state() == 4 then -- Catch the weapon state switch and do the ammo check animation instead
+	if valid_anms[anim_table.anm_name] and do_ammo_check_anim == 1 then -- Catch the weapon state switch and do the ammo check animation instead
 		anim_table.anm_speed = 1 -- Assume that the ammo check animation doesn't have a speed set in the ltx
 		
-		local anm_no_mag_check = SYS_GetParam(0, obj:section() .. "_hud", "anm_ammo_check_no_mag")
-		local anm_check_empty = SYS_GetParam(0, obj:section() .. "_hud", "anm_ammo_check_empty")
+        local anm_no_mag_check = get_hud_val(obj, "anm_ammo_check_no_mag")
+        local anm_check_empty = get_hud_val(obj, "anm_ammo_check_empty")
 
 		if no_mag_check and anm_no_mag_check then
 			anim_table.anm_name = "anm_ammo_check_no_mag"
