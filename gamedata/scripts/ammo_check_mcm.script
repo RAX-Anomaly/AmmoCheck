@@ -292,7 +292,7 @@ function check_Ammo()
 		if anm_ammo_check then
 			if do_ammo_check_anim then return end -- If an ammo check is already happening, don't do anything
 			
-			local anm_no_mag_check = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check_no_mag")
+			local anm_no_mag_check = SYS_GetParam(0, hud_sec, "anm_ammo_check_no_mag")
 			if no_mag_check and (not anm_no_mag_check) then -- if trying to mag check with no mag in gun and there's no "no_mag_check" animation it immediately shows the ammo message without animation
 				message_delay = 0
 			else
@@ -302,7 +302,7 @@ function check_Ammo()
 					do_ammo_check_anim = 1
 					weapon:switch_state(4)
 				else
-					local anm_check_empty = SYS_GetParam(0, weapon:section() .. "_hud", "anm_ammo_check_empty")
+					local anm_check_empty = SYS_GetParam(0, hud_sec, "anm_ammo_check_empty")
 
 					if no_mag_check and anm_no_mag_check then
 						weapon:play_hud_motion("anm_ammo_check_no_mag", true, 0, 1, 0)
@@ -402,8 +402,10 @@ function actor_on_hud_animation_play(anim_table, obj)
 	if valid_anms[anim_table.anm_name] and do_ammo_check_anim == 1 and obj:get_state() == 4 then -- Catch the weapon state switch and do the ammo check animation instead
 		anim_table.anm_speed = 1 -- Assume that the ammo check animation doesn't have a speed set in the ltx
 		
-		local anm_no_mag_check = SYS_GetParam(0, obj:section() .. "_hud", "anm_ammo_check_no_mag")
-		local anm_check_empty = SYS_GetParam(0, obj:section() .. "_hud", "anm_ammo_check_empty")
+        local hud_sec = SYS_GetParam(0, obj:section(), "hud")
+
+		local anm_no_mag_check = SYS_GetParam(0, hud_sec, "anm_ammo_check_no_mag")
+		local anm_check_empty = SYS_GetParam(0, hud_sec, "anm_ammo_check_empty")
 
 		if no_mag_check and anm_no_mag_check then
 			anim_table.anm_name = "anm_ammo_check_no_mag"
