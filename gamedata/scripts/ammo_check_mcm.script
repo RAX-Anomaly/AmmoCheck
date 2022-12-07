@@ -293,7 +293,7 @@ function check_Ammo()
 		local anm_ammo_check = get_hud_val(weapon, "anm_ammo_check") 
 		if anm_ammo_check then
             -- moved to another  func for tidy
-            anim_ammo_check(weapon, message, no_mag_check)
+            anim_ammo_check(weapon, message)
 		else
 			local slot = db.actor:active_slot()
 			db.actor:activate_slot(0)
@@ -329,7 +329,7 @@ function get_hud_val(wpn, key)
     end
 end
 
-function anim_ammo_check(weapon, message, no_mag_check)
+function anim_ammo_check(weapon, message)
 
     if do_ammo_check_anim then return end -- If an ammo check is already happening, don't do anything
 			
@@ -392,28 +392,17 @@ function give_news(message)
     end
 end
 
-local valid_anms = {
-	anm_idle = true,
-	anm_idle_empty = true,
-	anm_idle_aim = true,
-	anm_idle_aim_moving = true,
-	anm_idle_aim_moving_crouch = true,
-	anm_idle_moving = true,
-	anm_idle_sprint = true,
-	anm_idle_aim_empty = true,
-	anm_idle_aim_moving_crouch_empty = true,
-	anm_idle_aim_moving_empty = true,
-	anm_idle_moving_crouch_empty = true,
-	anm_idle_moving_empty = true,
-	anm_idle_sprint_empty = true,
-	anm_bore = true,
-	anm_bore_empty = true,
-    anm_idle_g = true,
-    anm_idle_w_gl = true
+local exclude_anims = {
+    anm_ammo_check = true,
+    anm_ammo_check_empty = true
 }
 
 function actor_on_hud_animation_play(anim_table, obj)
-	if valid_anms[anim_table.anm_name] and do_ammo_check_anim == 1 then -- Catch the weapon state switch and do the ammo check animation instead
+    if do_ammo_check_anim ~= 1 then return end
+
+    if exclude_anims[anim_table.anm_name] and not no_mag_check then -- Exclude mag check animations already playing, like the custom random inspect for Barry's VSSK
+        do_ammo_check_anim = 2
+    else -- Catch the weapon state switch and do the ammo check animation instead
 		anim_table.anm_speed = 1 -- Assume that the ammo check animation doesn't have a speed set in the ltx
 		
         local anm_no_mag_check = get_hud_val(obj, "anm_ammo_check_no_mag")
