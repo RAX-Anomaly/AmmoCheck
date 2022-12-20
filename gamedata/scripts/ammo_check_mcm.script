@@ -142,7 +142,7 @@ function on_game_start()
     RegisterScriptCallback("on_option_change", on_option_change)
     RegisterScriptCallback("on_option_change", on_option_change)
     RegisterScriptCallback("on_key_press", on_key_press)
-	if GAME_VERSION ~= "1.5.1" then 
+	if GAME_VERSION ~= "1.5.1" and not animation_common then 
 		RegisterScriptCallback("actor_on_hud_animation_play", actor_on_hud_animation_play)
 	end
 end
@@ -434,3 +434,4 @@ function actor_on_hud_animation_play(anim_table, obj)
 		do_ammo_check_anim = 2
 	end
 end
+if animation_common then animation_common.add_anim_mutator(actor_on_hud_animation_play, -9999) end
