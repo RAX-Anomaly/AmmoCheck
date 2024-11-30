@@ -247,7 +247,8 @@ function check_Ammo()
             top_round = magazines_mcm.get_config("retain_round") and mag_data.loaded[#mag_data.loaded - 1] or stack.peek(mag_data.loaded)
         else
             top_round = get_sec_chambered(weapon)
-            max_ammo = SYS_GetParam(2, sec, "ammo_mag_size")
+            local cwpn = weapon:cast_Weapon()
+            max_ammo = cwpn and cwpn:GetAmmoMagSize() or 0
         end
 
         local curAmmoPerc = currentAmmo / max_ammo
